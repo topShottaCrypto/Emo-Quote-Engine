@@ -28,12 +28,40 @@ function DisquietApp() {
     setCount((prev) => prev + 1);
   };
 
-  const handleCopy = () => {
-    if (quote) {
-      navigator.clipboard.writeText(`${quote.text} — ${quote.source}`);
+  const handleCopy = async () => {
+    if (!quote) return;
+    const payload = `${quote.text} — ${quote.source}`;
+    let ok = false;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(payload);
+        ok = true;
+      }
+    } catch {
+      ok = false;
+    }
+    if (!ok) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = payload;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
       toast.success("Copied to your tragic clipboard.", {
-        icon: <HeartCrack className="w-4 h-4 text-purple-500" />
+        icon: <HeartCrack className="w-4 h-4 text-purple-500" />,
       });
+    } else {
+      toast.error("Couldn't copy. Even the clipboard left.");
     }
   };
 
