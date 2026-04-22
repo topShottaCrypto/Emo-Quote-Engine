@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getRandomLyric, generateTrendQuote, TREND_PROMPTS, type Quote } from "@/lib/quotes";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { FONT_STYLES, transformText, type FontStyleId } from "@/lib/fonts";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,9 @@ function DisquietApp() {
   const [count, setCount] = useState(0);
   const [mode, setMode] = useState<"lyrics" | "trends">("lyrics");
   const [trendInput, setTrendInput] = useState("");
+  const [fontStyle, setFontStyle] = useState<FontStyleId>("default");
+
+  const styledText = quote ? transformText(quote.text, fontStyle) : "";
 
   const handleGenerate = (customTrend?: string) => {
     if (mode === "lyrics") {
@@ -30,7 +34,7 @@ function DisquietApp() {
 
   const handleCopy = async () => {
     if (!quote) return;
-    const payload = `${quote.text} — ${quote.source}`;
+    const payload = `${styledText} — ${quote.source}`;
     let ok = false;
     try {
       if (navigator.clipboard && window.isSecureContext) {
@@ -67,7 +71,7 @@ function DisquietApp() {
 
   const handleShare = () => {
     if (quote) {
-      const text = encodeURIComponent(`"${quote.text}" — ${quote.source}`);
+      const text = encodeURIComponent(`"${styledText}" — ${quote.source}`);
       window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
     }
   };
@@ -148,15 +152,34 @@ function DisquietApp() {
                   <span className="absolute top-0 left-4 text-6xl text-primary/20 font-serif leading-none select-none">"</span>
                   
                   <p className="text-2xl md:text-4xl font-serif text-white leading-relaxed tracking-wide text-balance">
-                    {quote.text}
+                    {styledText}
                   </p>
                   
                   <div className="flex flex-col items-center gap-4 mt-4">
                     <span className="text-sm font-medium text-primary/80 tracking-widest uppercase text-balance">
                       {quote.source}
                     </span>
-                    
-                    <div className="flex items-center gap-3 mt-4">
+
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2 max-w-md">
+                      {FONT_STYLES.map((f) => (
+                        <button
+                          key={f.id}
+                          onClick={() => setFontStyle(f.id)}
+                          aria-pressed={fontStyle === f.id}
+                          aria-label={`Use ${f.label} style`}
+                          className={`min-w-9 h-9 px-2.5 rounded-full text-sm border transition-all ${
+                            fontStyle === f.id
+                              ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/30"
+                              : "bg-white/5 text-muted-foreground border-white/10 hover:text-white hover:border-primary/40"
+                          }`}
+                          title={f.label}
+                        >
+                          {f.preview}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-2">
                       <button onClick={handleCopy} className="p-2 rounded-full hover:bg-white/5 text-muted-foreground hover:text-white transition-colors group relative" aria-label="Copy quote">
                         <Copy className="w-4 h-4" />
                         <span className="sr-only">Copy</span>
